@@ -7,10 +7,19 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div class="contactbar">
+  По вопросам работы каталога запасных частей, ошибок, замечаний обращаться к Кузнецову&nbsp;В.Е.
+  <a href="mailto:KuznetsovVE@industrservice.ru">KuznetsovVE@industrservice.ru</a>
+</div>
 <header class="topbar">
   <button id="menuBtn" class="icon-btn only-mobile" title="Меню" aria-label="Меню">&#9776;</button>
   <div class="brand">
-    <span class="brand-mark">NHL</span>
+    <span class="brand-mark" aria-label="Развитие">
+      <svg viewBox="0 0 196 196" width="34" height="34" role="img" aria-hidden="true">
+        <path d="M63.5941 165.078 114.786 64.5721 99.6758 31 83.5127 31 16 165.078 63.5941 165.078Z" fill="#3EF0AF"/>
+        <path d="M107.608 118.291 152.342 118.291 179.684 64.5721 164.574 31 119.559 31 134.669 64.5721 107.608 118.291Z" fill="#3EF0AF"/>
+      </svg>
+    </span>
     <div class="brand-txt">
       <strong>NTE200</strong>
       <small>Каталог запчастей · Parts Book</small>
@@ -44,6 +53,8 @@
         <div class="stat"><b id="sParts">0</b><span>позиций</span></div>
         <div class="stat"><b id="sDraws">0</b><span>чертежей</span></div>
       </div>
+      <p><button id="exportAll" class="btn btn-primary" style="flex:0 0 auto;padding:11px 20px">
+        ⬇ Экспорт всех каталожных номеров (CSV)</button></p>
       <ol class="how">
         <li>Откройте раздел системы (например, «Гидравлика») и нужный узел.</li>
         <li>Сопоставьте номер позиции на чертеже со строкой в таблице.</li>
@@ -85,11 +96,16 @@
       <span>Позиций: <b id="cartLines">0</b></span>
       <span>Всего шт.: <b id="cartQty">0</b></span>
     </div>
+    <div class="cart-total cart-sum">
+      <span>Сумма (позиции с ценой):</span>
+      <span><b id="cartSum">0</b> CNY <small>без НДС</small></span>
+    </div>
     <div class="cart-actions">
       <button id="exportCsv" class="btn btn-primary">Экспорт CSV</button>
       <button id="printOrder" class="btn">Печать</button>
       <button id="clearCart" class="btn btn-ghost">Очистить</button>
     </div>
+    <button id="exportAll2" class="btn" style="width:100%;margin-top:8px">⬇ Экспорт всех каталожных номеров (CSV)</button>
   </div>
 </aside>
 
@@ -101,6 +117,7 @@
 </div>
 
 <script src="data/parts.js"></script>
+<script src="data/prices.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
