@@ -29,6 +29,16 @@ python3 -m http.server 8000   # затем http://localhost:8000
 - **Корзина заказа** — добавление деталей кнопкой ＋, редактирование
   количества, поле серийного номера машины, выгрузка заявки в **CSV** или на
   **печать**. Содержимое корзины сохраняется в браузере (localStorage).
+- **Экспорт всех каталожных номеров** — кнопка на стартовом экране и в корзине
+  выгружает CSV со всеми уникальными каталожными номерами (с указанием
+  источника NTE200 / GE и разделов). Готовый файл также лежит в
+  `data/all_part_numbers.csv`.
+
+## Содержимое
+
+Каталог включает книгу запчастей NTE200 и **привод GE** (глава 600 —
+驱动系统 / DRIVING SYSTEM):轮马达/WHEEL MOTOR, 主发电机/MAIN ALTERNATOR,
+电阻柜/RETARDER, 电控柜/CONTROL GROUP, 接触器/CONTACTOR.
 
 ## Структура
 
@@ -56,3 +66,18 @@ python3 tools/extract_catalog.py path/to/catalog.pdf
 ```
 
 Скрипт заново создаёт `catalog/data/parts.js` и `catalog/drawings/`.
+
+### Привод GE (глава 600)
+
+Данные и чертежи привода GE извлекаются из Word-документа
+`NTE200 GE备件手册20230805.doc` скриптом
+[`tools/extract_ge.py`](../tools/extract_ge.py). Документ — бинарный `.doc`
+(OLE2); текст читается напрямую из piece table, чертежи вынимаются как PNG из
+потока `Data` и раскладываются по разделам по числу якорей-картинок. Скрипт
+дописывает главу 600 в `parts.js`, сохраняет `catalog/drawings/600-*.png` и
+пересобирает `catalog/data/all_part_numbers.csv`.
+
+```bash
+pip install olefile
+python3 tools/extract_ge.py "NTE200 GE备件手册20230805.doc"
+```

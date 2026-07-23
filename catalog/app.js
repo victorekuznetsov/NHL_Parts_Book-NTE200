@@ -322,6 +322,32 @@
     window.print();
   });
 
+  // export every unique catalog number across the whole catalog
+  function exportAllNumbers() {
+    var uniq = {};
+    DATA.sections.forEach(function (s) {
+      var src = s.chapter === "600" ? "GE" : "NTE200";
+      s.parts.forEach(function (p) {
+        var u = uniq[p.pn] || (uniq[p.pn] = { pn: p.pn, en: p.en, zh: p.zh, secs: {}, src: {} });
+        u.secs[s.code] = 1; u.src[src] = 1;
+        if (!u.en && p.en) u.en = p.en;
+        if (!u.zh && p.zh) u.zh = p.zh;
+      });
+    });
+    var keys = Object.keys(uniq).sort();
+    var out = ["Part No.,Description (EN),Description (ZH),Source,Sections"];
+    keys.forEach(function (k) {
+      var u = uniq[k];
+      out.push([csv(u.pn), csv(u.en), csv(u.zh),
+        Object.keys(u.src).sort().join("/"),
+        csv(Object.keys(u.secs).sort().join(" "))].join(","));
+    });
+    download("NTE200_all_part_numbers.csv", "﻿" + out.join("\r\n"), "text/csv");
+    toast("Экспортировано номеров: " + keys.length);
+  }
+  $("#exportAll").addEventListener("click", exportAllNumbers);
+  $("#exportAll2").addEventListener("click", exportAllNumbers);
+
   $("#clearCart").addEventListener("click", function () {
     if (!cartLines()) return;
     if (confirm("Очистить весь заказ?")) { cart = {}; persist(); renderCart(); }
