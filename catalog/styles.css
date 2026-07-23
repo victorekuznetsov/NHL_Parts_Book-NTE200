@@ -111,12 +111,33 @@ code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.9em}
 .sv-sub{color:var(--mut);font-size:14px}
 .sv-chip{background:var(--panel2);border:1px solid var(--line);color:var(--mut);
   font-size:11.5px;padding:3px 9px;border-radius:20px}
-.drawings{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0 22px}
+/* figure = one drawing (or carousel) paired with its own position list */
+.figure{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;margin:18px 0 28px;
+  border-top:1px solid var(--line);padding-top:18px}
+.figure:first-of-type{border-top:none;padding-top:0}
+.figure.nofig{display:block}
+.fig-head{flex-basis:100%;color:var(--acc);font-size:13px;font-weight:600;margin-bottom:2px}
+.fig-draw{flex:0 0 44%;position:sticky;top:76px}
+.fig-parts{flex:1;min-width:0}
 .drawing{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
-  overflow:hidden;cursor:zoom-in;max-width:520px;flex:1 1 340px}
+  overflow:hidden;cursor:zoom-in;display:block}
 .drawing img{display:block;width:100%;height:auto}
 .drawing .zoom-ic{position:absolute;right:8px;bottom:8px;background:#000000a6;color:#fff;
-  font-size:12px;padding:4px 8px;border-radius:6px}
+  font-size:13px;padding:3px 7px;border-radius:6px}
+.carousel{position:relative}
+.carousel .slide{display:none}
+.carousel .slide.on{display:block}
+.cbtn{position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+  background:#000000b0;color:#fff;border:none;width:38px;height:52px;cursor:pointer;
+  font-size:26px;line-height:1;border-radius:8px}
+.cbtn.prev{left:8px}.cbtn.next{right:8px}
+.cbtn:hover{background:#000d}
+.ccount{position:absolute;left:8px;bottom:8px;background:#000000a6;color:#fff;
+  font-size:12px;padding:3px 9px;border-radius:12px;z-index:2}
+@media (max-width:900px){
+  .figure{display:block}
+  .fig-draw{position:static;margin-bottom:14px}
+}
 
 .parts-tbl{width:100%;border-collapse:collapse;font-size:13.5px;
   background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
@@ -128,7 +149,16 @@ code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.9em}
 .parts-tbl .c-pn{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
 .parts-tbl .c-pn button{background:none;border:none;color:var(--acc);cursor:pointer;font:inherit;font-weight:600;padding:0}
 .parts-tbl .c-pn button:hover{text-decoration:underline}
-.parts-tbl .c-qty{text-align:center;width:56px;color:var(--mut);font-variant-numeric:tabular-nums}
+.parts-tbl .c-qty{text-align:center;width:52px;color:var(--mut);font-variant-numeric:tabular-nums}
+.parts-tbl .c-need{width:64px;text-align:center}
+.parts-tbl .c-need input.need{width:52px;padding:5px 4px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--txt);border-radius:6px;font-size:13px;text-align:center;
+  font-variant-numeric:tabular-nums}
+.parts-tbl .c-need input.need:focus{outline:none;border-color:var(--acc2)}
+.parts-tbl .c-jump a{color:var(--acc2);text-decoration:none;font-variant-numeric:tabular-nums}
+.parts-tbl .c-jump a:hover{text-decoration:underline}
+.parts-tbl tr.norow td{color:var(--mut)}
+.parts-tbl .c-pn.dash{color:var(--mut);text-align:center}
 .parts-tbl .c-name .zh{font-size:14px}
 .parts-tbl .c-name .en{color:var(--mut);font-size:12px}
 .parts-tbl .c-add{width:52px;text-align:center}

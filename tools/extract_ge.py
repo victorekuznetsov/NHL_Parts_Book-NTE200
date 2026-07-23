@@ -196,12 +196,14 @@ def main():
     data["chapters"] = [c for c in data["chapters"] if c["code"] != "600"]
     data["chapters"].append({"code": "600", "zh": "驱动系统 (GE)", "en": "DRIVING SYSTEM (GE)"})
     for s in secs:
+        # the GE book has one combined parts list per section (its several
+        # drawings share it), so each section is a single figure
         data["sections"].append({
             "code": s["code"], "chapter": "600", "zh": s["zh"], "en": s["en"],
-            "images": s["images"], "parts": s["parts"],
+            "figures": [{"images": s["images"], "parts": s["parts"]}],
         })
     data["stats"] = {"sections": len(data["sections"]),
-                     "parts": sum(len(s["parts"]) for s in data["sections"])}
+                     "parts": sum(len(f["parts"]) for s in data["sections"] for f in s["figures"])}
     with open(DATA_JS, "w", encoding="utf-8") as fh:
         fh.write("window.CATALOG = ")
         json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
@@ -210,15 +212,18 @@ def main():
     # ---- unique catalog numbers export ----
     uniq = {}
     for s in data["sections"]:
-        for p in s["parts"]:
-            u = uniq.setdefault(p["pn"], {"pn": p["pn"], "zh": p["zh"], "en": p["en"],
-                                          "secs": set(), "src": set()})
-            u["secs"].add(s["code"])
-            u["src"].add("GE" if s["chapter"] == "600" else "NTE200")
-            if not u["en"] and p["en"]:
-                u["en"] = p["en"]
-            if not u["zh"] and p["zh"]:
-                u["zh"] = p["zh"]
+        for f in s["figures"]:
+            for p in f["parts"]:
+                if not p["pn"]:
+                    continue  # listed position without an orderable catalog number
+                u = uniq.setdefault(p["pn"], {"pn": p["pn"], "zh": p["zh"], "en": p["en"],
+                                              "secs": set(), "src": set()})
+                u["secs"].add(s["code"])
+                u["src"].add("GE" if s["chapter"] == "600" else "NTE200")
+                if not u["en"] and p["en"]:
+                    u["en"] = p["en"]
+                if not u["zh"] and p["zh"]:
+                    u["zh"] = p["zh"]
     with open(CSV_OUT, "w", encoding="utf-8-sig", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(["Part No.", "Description (EN)", "Description (ZH)", "Source", "Sections"])
