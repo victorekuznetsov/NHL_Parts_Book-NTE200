@@ -93,6 +93,9 @@
   }
 
   /* ---------------- parts table ---------------- */
+  function padRef(ref) {                     // show positions consistently as 001, 002…
+    return /^\d{1,2}$/.test(ref) ? ("00" + ref).slice(-3) : ref;
+  }
   function partsTable(parts) {
     var rows = parts.map(function (p) {
       var name = '<div class="zh">' + esc(p.zh || p.en) + "</div>" +
@@ -100,7 +103,7 @@
       var qn = parseInt(p.qty, 10); if (!(qn > 0)) qn = 1;
       if (p.pn) {
         return '<tr class="lvl' + (p.lvl || 0) + '">' +
-          '<td class="c-ref">' + esc(p.ref) + "</td>" +
+          '<td class="c-ref">' + esc(padRef(p.ref)) + "</td>" +
           '<td class="c-pn"><button data-pn="' + esc(p.pn) + '" title="Добавить в заказ">' + esc(p.pn) + "</button></td>" +
           '<td class="c-name">' + name + "</td>" +
           '<td class="c-qty" title="Количество на схеме">' + esc(p.qty) + "</td>" +
@@ -110,7 +113,7 @@
       }
       // listed position without an orderable catalog number
       return '<tr class="lvl' + (p.lvl || 0) + ' norow">' +
-        '<td class="c-ref">' + esc(p.ref) + "</td>" +
+        '<td class="c-ref">' + esc(padRef(p.ref)) + "</td>" +
         '<td class="c-pn dash">—</td>' +
         '<td class="c-name">' + name + "</td>" +
         '<td class="c-qty">' + esc(p.qty) + "</td>" +

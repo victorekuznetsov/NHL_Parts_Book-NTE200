@@ -12,6 +12,8 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;height:100%}
+/* never let async image loads scroll-anchor the page (would hide row 001) */
+html{overflow-anchor:none}
 body{
   background:var(--bg); color:var(--txt);
   font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
@@ -152,7 +154,7 @@ code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.9em}
 .parts-tbl{width:100%;border-collapse:collapse;font-size:13.5px;
   background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
 .parts-tbl th{background:var(--panel2);text-align:left;padding:10px;color:var(--mut);
-  font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:var(--top2);z-index:5}
+  font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
 .parts-tbl td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
 .parts-tbl tr:hover td{background:#f5f8fc}
 .parts-tbl .c-ref{color:var(--mut);font-variant-numeric:tabular-nums;width:46px;text-align:center}
