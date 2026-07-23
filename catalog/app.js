@@ -12,6 +12,13 @@
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
 
+  var PRICES = window.PRICES || {};
+  function priceOf(pn) { return PRICES[pn] || null; }
+  function fmtPrice(v) {
+    if (v == null || v === "") return "";
+    return Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   var byCode = {};
   DATA.sections.forEach(function (s) { byCode[s.code] = s; });
   function secParts(s) {
@@ -41,11 +48,18 @@
     qty = Math.max(1, Math.floor(qty || 1));
     if (cart[part.pn]) { cart[part.pn].qty += qty; }
     else {
+      var pr = priceOf(part.pn) || {};
       cart[part.pn] = { pn: part.pn, en: part.en, zh: part.zh,
-                        sec: sec.code, secName: sec.en, qty: qty };
+                        sec: sec.code, secName: sec.en, qty: qty,
+                        price: pr.p != null ? pr.p : null, ru: pr.n || "", grp: pr.g || "", xref: pr.x || "" };
     }
     persist(); renderCart(); flashCount();
     toast("В заказ: " + part.pn + " ×" + qty);
+  }
+  function cartSum() {
+    return Object.keys(cart).reduce(function (a, k) {
+      return a + (cart[k].price != null ? cart[k].price * cart[k].qty : 0);
+    }, 0);
   }
   function setQty(pn, q) {
     q = Math.max(0, Math.floor(q || 0));
@@ -96,16 +110,36 @@
   function padRef(ref) {                     // show positions consistently as 001, 002…
     return /^\d{1,2}$/.test(ref) ? ("00" + ref).slice(-3) : ref;
   }
+  function nameCell(p) {
+    var pr = priceOf(p.pn) || {};
+    var html = '<div class="zh">' + esc(p.zh || p.en) + "</div>" +
+      (p.en && p.zh ? '<div class="en">' + esc(p.en) + "</div>" : "");
+    // Russian name from the price list (only if it adds information)
+    if (pr.n && pr.n.toUpperCase() !== (p.en || "").toUpperCase()) {
+      html += '<div class="ru">' + esc(pr.n) + "</div>";
+    }
+    if (pr.g) html += '<span class="grp">' + esc(pr.g) + "</span>";
+    return html;
+  }
+  function pnCell(p) {
+    var pr = priceOf(p.pn) || {};
+    var x = pr.x ? '<span class="xref" title="Взаимозаменяемый артикул">↔ ' + esc(pr.x) + "</span>" : "";
+    return '<button data-pn="' + esc(p.pn) + '" title="Добавить в заказ">' + esc(p.pn) + "</button>" + x;
+  }
+  function priceCell(pn) {
+    var pr = priceOf(pn);
+    return pr && pr.p != null ? fmtPrice(pr.p) : '<span class="dash">—</span>';
+  }
+
   function partsTable(parts) {
     var rows = parts.map(function (p) {
-      var name = '<div class="zh">' + esc(p.zh || p.en) + "</div>" +
-        (p.en && p.zh ? '<div class="en">' + esc(p.en) + "</div>" : "");
       var qn = parseInt(p.qty, 10); if (!(qn > 0)) qn = 1;
       if (p.pn) {
         return '<tr class="lvl' + (p.lvl || 0) + '">' +
           '<td class="c-ref">' + esc(padRef(p.ref)) + "</td>" +
-          '<td class="c-pn"><button data-pn="' + esc(p.pn) + '" title="Добавить в заказ">' + esc(p.pn) + "</button></td>" +
-          '<td class="c-name">' + name + "</td>" +
+          '<td class="c-pn">' + pnCell(p) + "</td>" +
+          '<td class="c-name">' + nameCell(p) + "</td>" +
+          '<td class="c-price" title="Цена, CNY без НДС">' + priceCell(p.pn) + "</td>" +
           '<td class="c-qty" title="Количество на схеме">' + esc(p.qty) + "</td>" +
           '<td class="c-need"><input class="need" type="number" min="1" value="' + qn + '" data-pn="' + esc(p.pn) + '" title="Требуемое количество" aria-label="Требуемое количество"></td>' +
           '<td class="c-add"><button class="addbtn" data-pn="' + esc(p.pn) + '" title="Добавить в заказ">&#65291;</button></td>' +
@@ -115,12 +149,14 @@
       return '<tr class="lvl' + (p.lvl || 0) + ' norow">' +
         '<td class="c-ref">' + esc(padRef(p.ref)) + "</td>" +
         '<td class="c-pn dash">—</td>' +
-        '<td class="c-name">' + name + "</td>" +
+        '<td class="c-name">' + nameCell(p) + "</td>" +
+        '<td class="c-price dash">—</td>' +
         '<td class="c-qty">' + esc(p.qty) + "</td>" +
         '<td class="c-need"></td><td class="c-add"></td></tr>';
     }).join("");
     return '<table class="parts-tbl"><thead><tr>' +
       "<th>№</th><th>Номер детали</th><th>Наименование</th>" +
+      '<th title="Цена, CNY без НДС">Цена, CNY</th>' +
       '<th title="Количество на схеме">Кол-во</th><th>Нужно</th><th></th>' +
       "</tr></thead><tbody>" + rows + "</tbody></table>";
   }
@@ -257,13 +293,16 @@
     }
     if (hits.length) {
       html += '<div class="res-sec">Детали</div><table class="parts-tbl"><thead><tr>' +
-        "<th>Номер детали</th><th>Наименование</th><th>Раздел</th><th>Кол-во</th><th>Нужно</th><th></th></tr></thead><tbody>";
+        "<th>Номер детали</th><th>Наименование</th><th>Цена, CNY</th><th>Раздел</th><th>Кол-во</th><th>Нужно</th><th></th></tr></thead><tbody>";
       html += hits.slice(0, 400).map(function (h) {
         var p = h.p, qn = parseInt(p.qty, 10); if (!(qn > 0)) qn = 1;
+        var pr = priceOf(p.pn) || {};
         return "<tr>" +
           '<td class="c-pn"><button data-pn="' + esc(p.pn) + '">' + hl(p.pn, q) + "</button></td>" +
           '<td class="c-name"><div class="zh">' + hl(p.zh || p.en, q) + "</div>" +
-          (p.en && p.zh ? '<div class="en">' + hl(p.en, q) + "</div>" : "") + "</td>" +
+          (p.en && p.zh ? '<div class="en">' + hl(p.en, q) + "</div>" : "") +
+          (pr.n && pr.n.toUpperCase() !== (p.en || "").toUpperCase() ? '<div class="ru">' + hl(pr.n, q) + "</div>" : "") + "</td>" +
+          '<td class="c-price">' + (pr.p != null ? fmtPrice(pr.p) : '<span class="dash">—</span>') + "</td>" +
           '<td class="c-jump"><a href="#' + h.s.code + '" class="jump" data-code="' + h.s.code + '">' + esc(h.s.code) + "</a></td>" +
           '<td class="c-qty">' + esc(p.qty) + "</td>" +
           '<td class="c-need"><input class="need" type="number" min="1" value="' + qn + '" data-pn="' + esc(p.pn) + '"></td>' +
@@ -302,18 +341,23 @@
     var box = $("#cartItems"), empty = $("#cartEmpty"), keys = Object.keys(cart);
     $("#cartLines").textContent = cartLines();
     $("#cartQty").textContent = cartQty();
+    $("#cartSum").textContent = fmtPrice(cartSum());
     var badge = $("#cartCount");
     if (cartLines()) { badge.hidden = false; badge.textContent = cartLines(); } else badge.hidden = true;
     if (!keys.length) { box.innerHTML = ""; box.style.display = "none"; empty.style.display = "flex"; return; }
     box.style.display = "block"; empty.style.display = "none";
     box.innerHTML = keys.map(function (k) {
       var c = cart[k];
+      var line = c.price != null
+        ? '<div class="cp">' + fmtPrice(c.price) + " × " + c.qty + " = <b>" + fmtPrice(c.price * c.qty) + "</b> CNY</div>"
+        : '<div class="cp cp-no">нет цены в прайсе</div>';
       return '<div class="citem">' +
         '<div class="cn">' + esc(c.pn) + "</div>" +
         '<div class="qty"><button data-dec="' + esc(k) + '">&minus;</button>' +
         '<input type="number" min="0" value="' + c.qty + '" data-q="' + esc(k) + '">' +
         '<button data-inc="' + esc(k) + '">&#65291;</button></div>' +
-        '<div class="cd">' + esc(c.en || c.zh) + "</div>" +
+        '<div class="cd">' + esc(c.ru || c.en || c.zh) + "</div>" +
+        line +
         '<div class="cs">' + esc(c.sec) + " · " + esc(c.secName || "") + "</div>" +
         '<button class="rm" data-rm="' + esc(k) + '">Удалить</button></div>';
     }).join("");
@@ -344,8 +388,13 @@
     var out = ["NTE200 Parts Order", "Serial No.," + csv(serial)];
     if (cust) out.push("Customer/Note," + csv(cust));
     out.push("Date," + new Date().toISOString().slice(0, 10), "");
-    out.push("Part No.,Qty,Description (EN),Description (ZH),Section,Section Name");
-    rows.forEach(function (c) { out.push([csv(c.pn), c.qty, csv(c.en), csv(c.zh), csv(c.sec), csv(c.secName)].join(",")); });
+    out.push("Артикул,Кол-во,Цена CNY без НДС,Сумма CNY,Наименование (RU),Description (EN),Description (ZH),Группа,Взаимозаменяемый артикул,Раздел");
+    rows.forEach(function (c) {
+      var sum = c.price != null ? (c.price * c.qty) : "";
+      out.push([csv(c.pn), c.qty, (c.price == null ? "" : c.price), sum,
+        csv(c.ru), csv(c.en), csv(c.zh), csv(c.grp), csv(c.xref), csv(c.sec)].join(","));
+    });
+    out.push("", "Итого CNY без НДС," + cartSum());
     download("NTE200_order_" + new Date().toISOString().slice(0, 10) + ".csv", "﻿" + out.join("\r\n"), "text/csv");
   });
   $("#printOrder").addEventListener("click", function () {
@@ -357,12 +406,15 @@
       "<p>Serial No.: <b>" + (serial || "____________") + "</b>" + (cust ? " | " + cust : "") +
       " | Дата: " + new Date().toLocaleDateString() + "</p>" +
       "<table border='1' cellspacing='0' cellpadding='5' style='border-collapse:collapse;width:100%;font-size:12px'>" +
-      "<thead><tr><th>№</th><th>Part No.</th><th>Qty</th><th>Description</th><th>Section</th></tr></thead><tbody>" +
+      "<thead><tr><th>№</th><th>Артикул</th><th>Наименование</th><th>Кол-во</th>" +
+      "<th>Цена CNY</th><th>Сумма CNY</th><th>Раздел</th></tr></thead><tbody>" +
       rows.map(function (c, i) {
-        return "<tr><td>" + (i + 1) + "</td><td>" + esc(c.pn) + "</td><td align='center'>" + c.qty +
-          "</td><td>" + esc(c.en || c.zh) + "</td><td>" + esc(c.sec) + "</td></tr>";
+        var sum = c.price != null ? fmtPrice(c.price * c.qty) : "—";
+        return "<tr><td>" + (i + 1) + "</td><td>" + esc(c.pn) + "</td><td>" + esc(c.ru || c.en || c.zh) +
+          "</td><td align='center'>" + c.qty + "</td><td align='right'>" + (c.price != null ? fmtPrice(c.price) : "—") +
+          "</td><td align='right'>" + sum + "</td><td>" + esc(c.sec) + "</td></tr>";
       }).join("") + "</tbody></table><p style='margin-top:10px;font-size:12px'>Позиций: " + rows.length +
-      " Всего шт.: " + cartQty() + "</p>";
+      " &nbsp; Всего шт.: " + cartQty() + " &nbsp; <b>Итого: " + fmtPrice(cartSum()) + " CNY без НДС</b></p>";
     document.body.appendChild(d); window.print();
   });
   function exportAllNumbers() {
@@ -378,11 +430,14 @@
       });
     });
     var keys = Object.keys(uniq).sort();
-    var out = ["Part No.,Description (EN),Description (ZH),Source,Sections"];
+    // include all price-list analytics for each unique catalog number
+    var out = ["Артикул,Наименование (RU),Description (EN),Description (ZH)," +
+      "Цена CNY без НДС,Группа,Взаимозаменяемый артикул,Источник,Разделы"];
     keys.forEach(function (k) {
-      var u = uniq[k];
-      out.push([csv(u.pn), csv(u.en), csv(u.zh), Object.keys(u.src).sort().join("/"),
-        csv(Object.keys(u.secs).sort().join(" "))].join(","));
+      var u = uniq[k], pr = priceOf(k) || {};
+      out.push([csv(u.pn), csv(pr.n || ""), csv(u.en), csv(u.zh),
+        (pr.p == null ? "" : pr.p), csv(pr.g || ""), csv(pr.x || ""),
+        Object.keys(u.src).sort().join("/"), csv(Object.keys(u.secs).sort().join(" "))].join(","));
     });
     download("NTE200_all_part_numbers.csv", "﻿" + out.join("\r\n"), "text/csv");
     toast("Экспортировано номеров: " + keys.length);
