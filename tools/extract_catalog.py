@@ -173,6 +173,7 @@ def _parse_side(words, side, anchors):
 
         left = [w for w in toks if w[0] < pn_w[0]]
         right = [w for w in toks if w[0] > pn_w[0]]
+        # REF is a 1-3 digit; QTY is a count or the marker "AR" (As Required)
         nums = [w for w in left if re.fullmatch(r"\d{1,4}", w[4])]
         ref = qty = ""
         if len(nums) >= 2:
@@ -189,6 +190,10 @@ def _parse_side(words, side, anchors):
                     ref = nums[0][4]
             else:
                 ref = nums[0][4]
+        if not qty:
+            ar = [w for w in left if re.fullmatch(r"AR|A/R", w[4])]
+            if ar:
+                qty = ar[0][4]
         nc = "".join(w[4] for w in left if re.fullmatch(r"[A-Z]", w[4]))
         zh = " ".join(w[4] for w in right if _CJK.search(w[4]))
         en = " ".join(w[4] for w in right if re.search(r"[A-Za-z]", w[4]) and not _CJK.search(w[4]))

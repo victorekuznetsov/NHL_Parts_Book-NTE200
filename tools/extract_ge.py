@@ -115,16 +115,33 @@ def parse_sections(text):
         while i < len(toks):
             if is_pn(toks[i]):
                 pn = toks[i]
-                qty = toks[i - 1] if i - 1 >= 0 and re.fullmatch(r"\d{1,4}", toks[i - 1]) else ""
-                ref = toks[i - 2] if (i - 2 >= 0 and qty and re.fullmatch(r"\d{1,3}", toks[i - 2])) else ""
+                # A row is [NC] REF [QTY] PART-NO ZH EN, one field per token.
+                # Collect the short leading tokens before the part number; the
+                # QTY may be a count OR "AR" (As Required) and may be absent,
+                # and the REF may carry a letter suffix (e.g. "4A"). Handling all
+                # of these keeps every listed position (no gaps in the numbers).
+                lead = []
+                k = i - 1
+                while k >= 0 and re.fullmatch(r"\d{1,4}|AR|A/R|\d{1,3}[A-Z]|[A-Z]{1,3}\d{1,3}[A-Z]?", toks[k]):
+                    lead.insert(0, toks[k]); k -= 1
+                    if len(lead) >= 3:
+                        break
+                nc = ref = qty = ""
+                while lead and re.match(r"[A-Z]", lead[0]) and not re.fullmatch(r"AR|A/R", lead[0]):
+                    nc += lead.pop(0)                       # kit/note code (K01, AA…)
+                if lead and re.fullmatch(r"\d{1,3}[A-Z]?", lead[0]):
+                    ref = lead.pop(0)                        # position, maybe "4A"
+                if lead and re.fullmatch(r"\d{1,4}|AR|A/R", lead[0]):
+                    qty = lead.pop(0)
                 zh = en = ""
                 j = i + 1
                 if j < len(toks) and CJK.search(toks[j]):
                     zh = toks[j]; j += 1
                 if j < len(toks) and re.search(r"[A-Za-z]", toks[j]) and not CJK.search(toks[j]) and not is_pn(toks[j]):
                     en = toks[j]; j += 1
-                parts.append({"nc": "", "ref": ref, "qty": qty, "pn": pn,
-                              "zh": zh.lstrip("·• ").strip(), "en": en.lstrip("·• ").strip(), "lvl": 0})
+                lvl = 1 if re.match(r"[·•]", (zh or en)) else 0
+                parts.append({"nc": nc, "ref": ref, "qty": qty, "pn": pn,
+                              "zh": zh.lstrip("·• ").strip(), "en": en.lstrip("·• ").strip(), "lvl": lvl})
                 i = j
             else:
                 i += 1
