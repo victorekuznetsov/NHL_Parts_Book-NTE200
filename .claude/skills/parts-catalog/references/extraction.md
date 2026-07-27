@@ -62,6 +62,29 @@ it — read the OLE2 file directly with `olefile`:
 
 Same leading-token rules as the PDF apply (AR / blank qty / alphanumeric REF).
 
+## Cummins QuickServe engine catalog (`extract_qsk50.py`)
+
+A different shape entirely: a **folder tree** `<system>/<subsystem>/<CODE>.pdf`,
+one PDF per assembly (e.g. QSK50 engine). Each PDF: page 0 is an option spec
+sheet (skip it); the following pages carry an exploded diagram plus a **Russian**
+parts table `№ · Номер по каталогу · Название · Кол-во · Dimensions`.
+
+- Parse the table by **column x-bands**, assigning each name line to the
+  **nearest part by y** (part number / ref / qty sit vertically centered on the
+  wrapped name block, so a midpoint-between-rows split mis-cuts tall names).
+  Filter the repeating header/footer tokens. Rows without a `№` are real
+  alternate/sub parts — keep them.
+- The exploded diagram is an embedded raster on the table page — extract the
+  largest image; if a PDF has none, render the page instead.
+- Zip filenames store non-ASCII as `#UXXXX` — decode to real Cyrillic.
+- The **same assembly is cross-referenced under several systems**, so codes
+  repeat. Scope each section's identity by chapter (`Q10-FF6249-06`) or sections,
+  drawings and `location.hash` collide.
+- Map each system to a chapter and each PDF to a section; put the Russian option
+  name in the primary (`zh`) slot, the English subsystem name in `en`. Cummins
+  7-digit numbers match the price list's "Cummins" group, so run
+  `extract_prices.py` afterwards.
+
 ## Price list `.xlsx` (`extract_prices.py`)
 
 Header is below a contract preamble — find the row containing `Артикул`. Build
