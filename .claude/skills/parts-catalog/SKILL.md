@@ -42,6 +42,8 @@ and prices.
      figure grouping, drawing rendering).
    - `scripts/extract_doc_catalog.py` — binary Word `.doc` (piece-table text +
      PNG drawings from the `Data` stream) merged as a new chapter.
+   - `scripts/extract_qsk50.py` — Cummins QuickServe engine catalog (a folder
+     tree of one-assembly PDFs with Russian tables) merged as its own chapters.
    - `scripts/extract_prices.py` — `.xlsx` price list → `window.PRICES` + a
      unique-numbers CSV carrying every attribute.
    - **Read `references/extraction.md` first** — it lists the failure modes
