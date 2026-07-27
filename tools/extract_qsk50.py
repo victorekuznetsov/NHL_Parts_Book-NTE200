@@ -30,6 +30,87 @@ PN = re.compile(r"[0-9A-Z][0-9A-Z\-]{3,}$")
 HDR = {"Каталог", "деталей", "№", "Номер", "по", "каталогу", "Название",
        "Кол-во", "Dimensions", "Genuine", "Cummins", "Parts"}
 
+# Russian names for the English subsystem folders (shown in section subtitles)
+SUBSYS_RU = {
+    "ACCESSORY DRIVE": "Привод вспомогательных агрегатов",
+    "ACCESSORY DRIVE PULLEY": "Шкив привода вспомогательных агрегатов",
+    "AFTERCOOLER": "Охладитель наддувочного воздуха",
+    "ALTERNATOR": "Генератор",
+    "ALTERNATOR DRIVE": "Привод генератора",
+    "ALTERNATOR MOUNTING": "Крепление генератора",
+    "AUXILIARY COOLING INLET CONNECTION": "Впускной патрубок вспомогательного охлаждения",
+    "AUXILIARY COOLING SYSTEM": "Вспомогательная система охлаждения",
+    "BARRING DRIVE": "Валоповоротное устройство",
+    "BASE COMPONENTS": "Базовые компоненты",
+    "CABIN HEATER PLUMBING": "Трубопроводы отопителя кабины",
+    "CAM FOLLOWER COVER": "Крышка толкателей",
+    "CAMSHAFT GEAR": "Шестерня распредвала",
+    "COOLANT LEVEL SWITCH": "Датчик уровня охлаждающей жидкости",
+    "CORROSION RESISTOR": "Антикоррозионный фильтр",
+    "CORROSION RESISTOR MOUNTING": "Крепление антикоррозионного фильтра",
+    "CRANKCASE BREATHER": "Сапун картера",
+    "CRANKCASE BREATHER PLUMBING ARRANGEMENT": "Трубопроводы сапуна картера",
+    "CYLINDER BLOCK": "Блок цилиндров",
+    "CYLINDER BLOCK COOLANT PLUMBING": "Трубопроводы охлаждения блока цилиндров",
+    "CYLINDER BLOCK PLUMBING": "Трубопроводы блока цилиндров",
+    "DRAIN LOCATION": "Точки слива",
+    "ELECTRICAL STARTING ACCESSORIES": "Электрооборудование пуска",
+    "ELECTRONIC CONTROL MODULE WIRING HARNESS": "Жгут проводов электронного модуля управления",
+    "ENGINE CONTROL MODULE": "Электронный модуль управления двигателем",
+    "ENGINE LUBRICATING PRIMER": "Насос предпусковой прокачки масла",
+    "ENGINE OIL COOLER": "Масляный радиатор двигателя",
+    "ENGINE PISTON": "Поршень",
+    "EXHAUST MANIFOLD": "Выпускной коллектор",
+    "FAN DRIVE": "Привод вентилятора",
+    "FAN DRIVE PLUMBING": "Трубопроводы привода вентилятора",
+    "FAN PILOT SPACER": "Проставка ступицы вентилятора",
+    "FLYWHEEL": "Маховик",
+    "FLYWHEEL HOUSING": "Картер маховика",
+    "FLYWHEEL HOUSING PLUMBING": "Трубопроводы картера маховика",
+    "FRONT COVER PLUMBING": "Трубопроводы передней крышки",
+    "FRONT ENGINE SUPPORT": "Передняя опора двигателя",
+    "FRONT ENGINE SUPPORT PLUMBING": "Трубопроводы передней опоры двигателя",
+    "FRONT GEAR COVER": "Передняя крышка шестерён",
+    "FUEL CONTROL MODULE": "Модуль управления подачей топлива",
+    "FUEL DRAIN PLUMBING": "Трубопроводы слива топлива",
+    "FUEL FILTER": "Топливный фильтр",
+    "FUEL FILTER PLUMBING": "Трубопроводы топливного фильтра",
+    "FUEL INLET FITTING": "Впускной штуцер топлива",
+    "FUEL PLUMBING": "Топливные трубопроводы",
+    "FUEL PUMP": "Топливный насос",
+    "FUEL PUMP DRIVE": "Привод топливного насоса",
+    "FUEL PUMP PLUMBING": "Трубопроводы топливного насоса",
+    "GEAR COVER MOUNTING": "Крепление крышки шестерён",
+    "GUARD PACKAGE": "Комплект защитных ограждений",
+    "HAND HOLE COVER": "Крышка смотрового люка",
+    "LIFTING BRACKET": "Кронштейн подъёма (рым)",
+    "LUBRICATING OIL FILTER": "Масляный фильтр",
+    "LUBRICATING OIL PUMP": "Масляный насос",
+    "OIL FILL ARRANGEMENT": "Горловина заливки масла",
+    "OIL FILTER HEAD PLUMBING": "Трубопроводы головки масляного фильтра",
+    "OIL LEVEL GAUGE LOCATION": "Указатель уровня масла",
+    "OIL PAN": "Масляный поддон",
+    "OIL PRESSURE SENSOR": "Датчик давления масла",
+    "OIL TEMPERATURE SENSOR LOCATION": "Датчик температуры масла",
+    "PERFORMANCE PARTS": "Детали настройки характеристик",
+    "PRESSURE TEMPERATURE SENSOR": "Датчик давления и температуры",
+    "REFRIGERANT COMPRESSOR": "Компрессор кондиционера",
+    "ROCKER LEVER": "Коромысло клапана",
+    "STARTING MOTOR": "Стартер",
+    "STARTING MOTOR MOUNTING": "Крепление стартера",
+    "THERMOSTAT HOUSING": "Корпус термостата",
+    "THERMOSTAT HOUSING PLUMBING": "Трубопроводы корпуса термостата",
+    "TURBOCHARGER ARRANGEMENT": "Турбокомпрессор (компоновка)",
+    "TURBOCHARGER COOLANT PLUMBING": "Трубопроводы охлаждения турбокомпрессора",
+    "TURBOCHARGER OIL PLUMBING": "Масляные трубопроводы турбокомпрессора",
+    "VALVE COVER": "Крышка клапанов",
+    "VIBRATION DAMPER": "Гаситель крутильных колебаний",
+    "WATER INLET CONNECTION": "Впускной патрубок охлаждающей жидкости",
+    "WATER MANIFOLD": "Водяной коллектор",
+    "WATER PUMP": "Водяной насос",
+    "WATER PUMP PLUMBING": "Трубопроводы водяного насоса",
+}
+
 
 def decode(name):
     return re.sub(r"#U([0-9A-Fa-f]{4})", lambda m: chr(int(m.group(1), 16)), name)
@@ -146,7 +227,7 @@ def main():
         chap = "Q%02d" % snum
         if chap not in seen_chap:
             seen_chap[chap] = True
-            chapters.append({"code": chap, "zh": sname, "en": "QSK50"})
+            chapters.append({"code": chap, "zh": sname, "en": ""})
         subs = sorted(os.listdir(os.path.join(base, sysdir)),
                       key=lambda n: int(re.match(r"\s*(\d+)", n).group(1)) if re.match(r"\s*\d+", n) else 999)
         for subdir in subs:
@@ -164,9 +245,17 @@ def main():
                 for i in range(1, doc.page_count):
                     parts.extend(parse_page(doc[i]))
                 img = save_drawing(doc, uid)
+                ru_sub = SUBSYS_RU.get(en_name.upper(), "")
+                zh = option_name_ru(doc) or ru_sub or en_name
+                # subtitle keeps both languages: Russian subsystem (unless it just
+                # repeats the primary name) + English subsystem + Cummins code
+                sub = []
+                if ru_sub and ru_sub.lower() != zh.lower():
+                    sub.append(ru_sub)
+                sub += [en_name, pdfcode]
                 sections.append({
                     "code": uid, "chapter": chap,
-                    "zh": option_name_ru(doc) or en_name, "en": en_name + " · " + pdfcode,
+                    "zh": zh, "en": " · ".join(sub),
                     "figures": [{"images": [img], "parts": parts}],
                 })
                 doc.close()

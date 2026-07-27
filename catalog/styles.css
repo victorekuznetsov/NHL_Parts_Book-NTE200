@@ -76,6 +76,10 @@ code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.9em}
   height:calc(100vh - var(--top2));position:sticky;top:var(--top2);
 }
 .chapters{padding:8px}
+.chap-group{margin:12px 6px 4px;padding:6px 8px;font-size:11px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--acc-ink);
+  border-bottom:2px solid var(--acc)}
+.chap-group:first-child{margin-top:2px}
 .chap{margin-bottom:2px}
 .chap-h{
   display:flex;align-items:center;gap:8px;width:100%;text-align:left;
