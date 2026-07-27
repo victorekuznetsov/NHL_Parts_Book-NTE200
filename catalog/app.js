@@ -71,18 +71,28 @@
   function cartQty() { return Object.keys(cart).reduce(function (a, k) { return a + cart[k].qty; }, 0); }
 
   /* ---------------- sidebar ---------------- */
+  // group chapters into the truck and the engine catalogs
+  function chapGroup(code) {
+    return /^Q/.test(String(code))
+      ? { id: "qsk50", label: "Двигатель QSK50 · Cummins" }
+      : { id: "nte200", label: "Самосвал NTE200 · NHL" };
+  }
   function buildSidebar() {
     var nav = $("#chapters");
     var byChap = {};
     DATA.sections.forEach(function (s) { (byChap[s.chapter] = byChap[s.chapter] || []).push(s); });
+    var lastGroup = null;
     nav.innerHTML = DATA.chapters.map(function (ch) {
+      var g = chapGroup(ch.code);
+      var header = "";
+      if (g.id !== lastGroup) { lastGroup = g.id; header = '<div class="chap-group">' + esc(g.label) + "</div>"; }
       var items = (byChap[ch.code] || []).map(function (s) {
         return '<button class="sec-item" data-code="' + s.code + '">' +
           '<span class="sc">' + esc(s.code) + '</span>' +
           '<span class="cnt">' + secParts(s).length + '</span>' +
-          '<span class="sn">' + esc(s.zh) + ' · ' + esc(s.en) + '</span></button>';
+          '<span class="sn">' + esc(s.zh) + (s.en ? ' · ' + esc(s.en) : "") + '</span></button>';
       }).join("");
-      return '<div class="chap" data-chap="' + ch.code + '">' +
+      return header + '<div class="chap" data-chap="' + ch.code + '">' +
         '<button class="chap-h"><span class="caret">&#9656;</span>' +
         '<span class="code">' + esc(ch.code) + '</span>' +
         '<span>' + esc(ch.zh) + '</span>' +
