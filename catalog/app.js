@@ -13,6 +13,14 @@
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
 
   var PRICES = window.PRICES || {};
+  var MANUALS = window.MANUALS || { files: [], repairByCode: {}, repairByChapter: {}, repairToc: [], general: [], wiring: [] };
+  function manualFile(id) { return (MANUALS.files.filter(function (f) { return f.id === id; })[0] || {}).file; }
+  function repairLink(code, chapter) {
+    var pg = MANUALS.repairByCode[code];
+    if (pg) return { page: pg, exact: true };
+    if (MANUALS.repairByChapter[chapter]) return { page: MANUALS.repairByChapter[chapter], exact: false };
+    return null;
+  }
   function priceOf(pn) { return PRICES[pn] || null; }
   function fmtPrice(v) {
     if (v == null || v === "") return "";
@@ -217,10 +225,23 @@
       '<h1 class="sv-title">' + esc(s.zh) + "</h1>" +
       '<span class="sv-chip">' + esc(chapterName(s.chapter)) + "</span></div>" +
       '<div class="sv-sub">' + esc(s.en) + " · " + np + " позиций · " +
-      figs.length + (figs.length === 1 ? " рисунок" : " рисунк(ов)") + "</div>" + body;
+      figs.length + (figs.length === 1 ? " рисунок" : " рисунк(ов)") + "</div>" +
+      manualLinks(s) + body;
 
     wireSectionView(v);
     window.scrollTo(0, 0);
+  }
+  function manualLinks(s) {
+    var out = [];
+    var r = repairLink(s.code, s.chapter), rf = manualFile("repair");
+    if (r && rf) {
+      out.push('<a class="man-link" target="_blank" rel="noopener" href="' + esc(rf) + "#page=" + r.page + '">' +
+        "&#128214; Руководство по ремонту" + (r.exact ? " (стр. " + r.page + ")" : " — раздел (стр. " + r.page + ")") + "</a>");
+    }
+    if (s.chapter === "030" && manualFile("wiring")) {
+      out.push('<a class="man-link" target="_blank" rel="noopener" href="' + esc(manualFile("wiring")) + '">&#9889; Электросхема 24В</a>');
+    }
+    return out.length ? '<div class="man-links">' + out.join("") + "</div>" : "";
   }
   function posRange(parts) {
     var refs = parts.map(function (p) { return parseInt(p.ref, 10); }).filter(function (n) { return n > 0; });
@@ -352,6 +373,7 @@
     $("#cartLines").textContent = cartLines();
     $("#cartQty").textContent = cartQty();
     $("#cartSum").textContent = fmtPrice(cartSum());
+    renderAnalysis();
     var badge = $("#cartCount");
     if (cartLines()) { badge.hidden = false; badge.textContent = cartLines(); } else badge.hidden = true;
     if (!keys.length) { box.innerHTML = ""; box.style.display = "none"; empty.style.display = "flex"; return; }
@@ -372,6 +394,29 @@
         '<button class="rm" data-rm="' + esc(k) + '">Удалить</button></div>';
     }).join("");
   }
+  // order analysis: breakdown by system (chapter), and price coverage
+  function renderAnalysis() {
+    var box = $("#cartAnalysis"); if (!box) return;
+    var keys = Object.keys(cart);
+    if (!keys.length) { box.innerHTML = ""; return; }
+    var byChap = {}, priced = 0, unpriced = 0;
+    keys.forEach(function (k) {
+      var c = cart[k], s = byCode[c.sec], ch = s ? s.chapter : "—";
+      var g = byChap[ch] || (byChap[ch] = { lines: 0, qty: 0, sum: 0 });
+      g.lines += 1; g.qty += c.qty;
+      if (c.price != null) { g.sum += c.price * c.qty; priced += 1; } else unpriced += 1;
+    });
+    var rows = Object.keys(byChap).sort().map(function (ch) {
+      var g = byChap[ch];
+      var c = DATA.chapters.filter(function (x) { return x.code === ch; })[0];
+      var label = c ? c.code + " · " + (c.en || c.zh) : ch;
+      return '<div class="an-row"><span>' + esc(label) + "</span>" +
+        '<span>' + g.lines + " поз. · " + (g.sum ? fmtPrice(g.sum) + " CNY" : "—") + "</span></div>";
+    }).join("");
+    box.innerHTML = '<details class="an-box"><summary>Анализ заказа · по системам' +
+      " · с ценой " + priced + " / без цены " + unpriced + "</summary>" + rows + "</details>";
+  }
+
   $("#cartItems").addEventListener("click", function (e) {
     var t = e.target;
     if (t.dataset.inc) setQty(t.dataset.inc, cart[t.dataset.inc].qty + 1);
@@ -493,7 +538,7 @@
     if (!Object.keys(pts).length) drag = false;
   });
   function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeLb(); closeCart(); } });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeLb(); closeCart(); closeDocs(); } });
 
   /* ---------------- drawers ---------------- */
   var cartEl = $("#cart"), cartScrim = $("#cartScrim");
@@ -502,6 +547,42 @@
   $("#cartBtn").addEventListener("click", openCart);
   $("#cartClose").addEventListener("click", closeCart);
   cartScrim.addEventListener("click", closeCart);
+  /* ---------------- documents drawer ---------------- */
+  function renderDocs() {
+    var box = $("#docsBody");
+    var cards = MANUALS.files.map(function (f) {
+      return '<a class="doc-card" target="_blank" rel="noopener" href="' + esc(f.file) + '">' +
+        '<div class="dc-title">' + esc(f.title) + "</div>" +
+        '<div class="dc-desc">' + esc(f.desc) + "</div>" +
+        '<div class="dc-meta">' + f.pages + " стр. · PDF · открыть &#8599;</div></a>";
+    }).join("");
+    var rf = manualFile("repair");
+    var toc = MANUALS.repairToc.map(function (t) {
+      return '<a class="toc-row" target="_blank" rel="noopener" href="' + esc(rf) + "#page=" + t.page + '">' +
+        '<span class="tc-code">' + esc(t.code) + "</span>" +
+        '<span class="tc-name">' + esc(t.title) + "</span>" +
+        '<span class="tc-page">стр. ' + t.page + "</span></a>";
+    }).join("");
+    var wf = manualFile("wiring");
+    var wir = MANUALS.wiring.map(function (w) {
+      return '<a class="toc-row" target="_blank" rel="noopener" href="' + esc(wf) + "#page=" + w.page + '">' +
+        '<span class="tc-name">' + esc(w.title) + "</span>" +
+        '<span class="tc-page">стр. ' + w.page + "</span></a>";
+    }).join("");
+    box.innerHTML = '<div class="doc-cards">' + cards + "</div>" +
+      (toc ? '<details class="doc-sec" open><summary>Разделы руководства по ремонту (' + MANUALS.repairToc.length + ")</summary>" +
+        '<div class="toc-list">' + toc + "</div></details>" : "") +
+      (wir ? '<details class="doc-sec"><summary>Схемы электрооборудования 24В (' + MANUALS.wiring.length + ")</summary>" +
+        '<div class="toc-list">' + wir + "</div></details>" : "");
+  }
+  var docsEl = $("#docs"), docsScrim = $("#docsScrim");
+  function openDocs() { renderDocs(); docsEl.classList.add("open"); docsScrim.classList.add("show"); }
+  function closeDocs() { docsEl.classList.remove("open"); docsScrim.classList.remove("show"); }
+  $("#docsBtn").addEventListener("click", openDocs);
+  var docsBtn2 = $("#docsBtn2"); if (docsBtn2) docsBtn2.addEventListener("click", openDocs);
+  $("#docsClose").addEventListener("click", closeDocs);
+  docsScrim.addEventListener("click", closeDocs);
+
   var sb = $("#sidebar"), scrim = $("#scrim");
   function openSidebar() { sb.classList.add("open"); scrim.classList.add("show"); }
   function closeSidebar() { sb.classList.remove("open"); scrim.classList.remove("show"); }
