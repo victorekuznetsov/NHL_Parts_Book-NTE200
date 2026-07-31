@@ -53,7 +53,8 @@ CJK_RE = re.compile(r"[一-鿿]")
 
 def reconstruct_pdf():
     """Rebuild the PDF from split zip parts in the repo root, return a path."""
-    parts = sorted(glob.glob(os.path.join(ROOT, "*.zip.0*")))
+    parts = sorted(glob.glob(os.path.join(ROOT, "sources", "nte200-parts", "*.zip.0*"))
+                   or glob.glob(os.path.join(ROOT, "*.zip.0*")))
     if not parts:
         raise SystemExit("No PDF given and no split zip parts (*.zip.0*) found.")
     tmp_zip = os.path.join(ROOT, "tools", "_catalog_combined.zip")

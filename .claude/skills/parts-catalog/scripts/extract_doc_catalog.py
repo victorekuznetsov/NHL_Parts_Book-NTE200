@@ -175,7 +175,8 @@ def extract_pngs(ole):
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else None
     if not src:
-        cand = glob.glob(os.path.join(ROOT, "*GE*.doc")) + glob.glob(os.path.join(ROOT, "*.doc"))
+        cand = (glob.glob(os.path.join(ROOT, "sources", "ge-drive", "*.doc"))
+                or glob.glob(os.path.join(ROOT, "*GE*.doc")) + glob.glob(os.path.join(ROOT, "*.doc")))
         if not cand:
             raise SystemExit("GE .doc not found; pass its path as an argument")
         src = cand[0]

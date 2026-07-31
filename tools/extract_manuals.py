@@ -34,6 +34,10 @@ GENERAL_RU = {"000-0000": "Введение", "000-0010": "Безопаснос�
 
 
 def main():
+    def src_path(name):
+        p = os.path.join(ROOT, "sources", "manuals", name)
+        return p if os.path.exists(p) else os.path.join(ROOT, name)
+
     os.makedirs(MAN_DIR, exist_ok=True)
     cat = json.loads(open(os.path.join(ROOT, "catalog", "data", "parts.js"),
                           encoding="utf-8").read()[len("window.CATALOG = "):-2])
@@ -43,13 +47,13 @@ def main():
 
     files = []
     for fid, (src, dst, title, desc) in SRC.items():
-        shutil.copyfile(os.path.join(ROOT, src), os.path.join(MAN_DIR, dst))
+        shutil.copyfile(src_path(src), os.path.join(MAN_DIR, dst))
         pages = fitz.open(os.path.join(MAN_DIR, dst)).page_count
         files.append({"id": fid, "title": title, "file": "manuals/" + dst,
                       "pages": pages, "desc": desc})
 
     # repair manual: map codes/chapters to pages, build a clean chapter list
-    doc = fitz.open(os.path.join(ROOT, SRC["repair"][0]))
+    doc = fitz.open(src_path(SRC["repair"][0]))
     by_code, by_chapter, toc, general = {}, {}, [], []
     for lvl, title, pg in doc.get_toc():
         m = re.search(r"(\d{3})-(\d{4})", title)
@@ -69,7 +73,7 @@ def main():
 
     # 24V wiring: diagram-level page index (Chinese schematic names)
     wiring = []
-    for lvl, title, pg in fitz.open(os.path.join(ROOT, SRC["wiring"][0])).get_toc():
+    for lvl, title, pg in fitz.open(src_path(SRC["wiring"][0])).get_toc():
         if lvl == 3 and re.match(r"\s*\d+\s", title):          # the "=图" children
             wiring.append({"title": title.strip(), "page": pg})
 
