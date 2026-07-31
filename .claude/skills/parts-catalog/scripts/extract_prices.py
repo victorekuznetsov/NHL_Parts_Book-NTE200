@@ -113,9 +113,17 @@ def main():
         fh.write(";\n")
 
     # ---- unique catalog numbers WITH all analytics ----
+    def catalog_of(chapter):
+        ch = str(chapter)
+        if ch == "600":
+            return "GE"
+        if ch.startswith("Q"):
+            return "Cummins"
+        return "NTE200"
+
     uniq = {}
     for s in data["sections"]:
-        src_tag = "GE" if s["chapter"] == "600" else "NTE200"
+        src_tag = catalog_of(s["chapter"])
         for f in s["figures"]:
             for p in f["parts"]:
                 if not p["pn"]:
@@ -131,16 +139,16 @@ def main():
 
     with open(CSV_OUT, "w", encoding="utf-8-sig", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["Артикул (Part No.)", "Наименование (RU)", "Description (EN)",
-                    "Description (ZH)", "Цена, CNY без НДС", "Группа",
-                    "Взаимозаменяемый артикул", "Источник", "Разделы"])
+        w.writerow(["Артикул (Part No.)", "Каталог", "Наименование (RU)",
+                    "Description (EN)", "Description (ZH)", "Цена, CNY без НДС",
+                    "Группа", "Взаимозаменяемый артикул", "Разделы"])
         for pn in sorted(uniq):
             u = uniq[pn]
             pr = prices.get(pn, {})
-            w.writerow([pn, pr.get("n", ""), u["en"], u["zh"],
+            w.writerow([pn, "/".join(sorted(u["src"])), pr.get("n", ""), u["en"], u["zh"],
                         ("" if pr.get("p") is None else pr.get("p")),
                         pr.get("g", ""), pr.get("x", ""),
-                        "/".join(sorted(u["src"])), " ".join(sorted(u["secs"]))])
+                        " ".join(sorted(u["secs"]))])
 
     print("Price rows loaded: %d" % len(prices))
     print("Catalog part numbers: %d  with a price: %d" % (len(catalog_pns), matched))
