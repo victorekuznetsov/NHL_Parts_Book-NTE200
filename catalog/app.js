@@ -472,10 +472,14 @@
       " &nbsp; Всего шт.: " + cartQty() + " &nbsp; <b>Итого: " + fmtPrice(cartSum()) + " CNY без НДС</b></p>";
     document.body.appendChild(d); window.print();
   });
+  function catalogOf(chapter) {
+    var ch = String(chapter);
+    return ch === "600" ? "GE" : (/^Q/.test(ch) ? "Cummins" : "NTE200");
+  }
   function exportAllNumbers() {
     var uniq = {};
     DATA.sections.forEach(function (s) {
-      var src = s.chapter === "600" ? "GE" : "NTE200";
+      var src = catalogOf(s.chapter);
       secParts(s).forEach(function (p) {
         if (!p.pn) return;
         var u = uniq[p.pn] || (uniq[p.pn] = { pn: p.pn, en: p.en, zh: p.zh, secs: {}, src: {} });
@@ -485,14 +489,14 @@
       });
     });
     var keys = Object.keys(uniq).sort();
-    // include all price-list analytics for each unique catalog number
-    var out = ["Артикул,Наименование (RU),Description (EN),Description (ZH)," +
-      "Цена CNY без НДС,Группа,Взаимозаменяемый артикул,Источник,Разделы"];
+    // include the catalog flag (NTE200/GE/Cummins) and all price-list analytics
+    var out = ["Артикул,Каталог,Наименование (RU),Description (EN),Description (ZH)," +
+      "Цена CNY без НДС,Группа,Взаимозаменяемый артикул,Разделы"];
     keys.forEach(function (k) {
       var u = uniq[k], pr = priceOf(k) || {};
-      out.push([csv(u.pn), csv(pr.n || ""), csv(u.en), csv(u.zh),
+      out.push([csv(u.pn), Object.keys(u.src).sort().join("/"), csv(pr.n || ""), csv(u.en), csv(u.zh),
         (pr.p == null ? "" : pr.p), csv(pr.g || ""), csv(pr.x || ""),
-        Object.keys(u.src).sort().join("/"), csv(Object.keys(u.secs).sort().join(" "))].join(","));
+        csv(Object.keys(u.secs).sort().join(" "))].join(","));
     });
     download("NTE200_all_part_numbers.csv", "﻿" + out.join("\r\n"), "text/csv");
     toast("Экспортировано номеров: " + keys.length);
