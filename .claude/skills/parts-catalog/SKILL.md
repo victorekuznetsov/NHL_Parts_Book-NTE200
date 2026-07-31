@@ -3,18 +3,16 @@ name: parts-catalog
 description: >-
   Build a complete interactive, clickable web parts catalog from a
   manufacturer's spare-parts book, price list and service manuals — section
-  drawings paired with their position lists, full-text search, a required-
-  quantity order cart with prices and order analysis, deep links from each
-  section to its repair-manual page, and CSV/print export. Use this whenever the
-  user wants to turn a parts book / каталог запчастей / parts manual into a
-  browsable or clickable catalog, extract the parts tables or catalog numbers
-  from such a book, pull a price list or repair/operator/wiring manuals into it,
-  or fix/extend a catalog built this way — including when the source is a PDF
-  (often split-zip), a binary Word .doc, a Cummins QuickServe folder of PDFs, an
-  .xlsx price list, or manual PDFs, and even if they don't say "catalog"
-  explicitly (e.g. "make these drawings clickable with an order basket",
-  "extract all unique part numbers", "add prices/repair guides to the catalog").
-  Handles bilingual Chinese/English/Russian OEM books and their quirks.
+  drawings paired with their position lists, search, an order cart with prices
+  and order analysis, per-section links to the repair-manual page, and CSV/print
+  export. Use whenever the user wants to turn a parts book / каталог запчастей /
+  parts manual into a browsable or clickable catalog, extract the parts tables or
+  catalog numbers, pull a price list or repair/operator/wiring manuals into it,
+  or fix/extend a catalog built this way — sources may be a PDF (often
+  split-zip), a binary Word .doc, a Cummins QuickServe folder of PDFs, an .xlsx
+  price list, or manual PDFs, even if they don't say "catalog" (e.g. "make these
+  drawings clickable with an order basket", "extract all unique part numbers",
+  "add prices/repair guides"). Bilingual Chinese/English/Russian OEM books.
 ---
 
 # Interactive parts catalog — complete kit
