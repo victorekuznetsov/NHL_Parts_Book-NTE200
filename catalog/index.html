@@ -30,6 +30,9 @@
            placeholder="Поиск: номер детали, название, раздел…">
     <span class="search-ic">&#128269;</span>
   </div>
+  <button id="docsBtn" class="doc-btn" title="Документы и руководства">
+    &#128218; <span>Документы</span>
+  </button>
   <button id="cartBtn" class="cart-btn" title="Корзина заказа">
     &#128722; <span>Заказ</span>
     <span id="cartCount" class="cart-count" hidden>0</span>
@@ -53,8 +56,12 @@
         <div class="stat"><b id="sParts">0</b><span>позиций</span></div>
         <div class="stat"><b id="sDraws">0</b><span>чертежей</span></div>
       </div>
-      <p><button id="exportAll" class="btn btn-primary" style="flex:0 0 auto;padding:11px 20px">
-        ⬇ Экспорт всех каталожных номеров (CSV)</button></p>
+      <p style="display:flex;gap:10px;flex-wrap:wrap">
+        <button id="exportAll" class="btn btn-primary" style="flex:0 0 auto;padding:11px 20px">
+          ⬇ Экспорт всех каталожных номеров (CSV)</button>
+        <button id="docsBtn2" class="btn" style="flex:0 0 auto;padding:11px 20px">
+          📚 Руководства по ремонту и эксплуатации</button>
+      </p>
       <ol class="how">
         <li>Откройте раздел системы (например, «Гидравлика») и нужный узел.</li>
         <li>Сопоставьте номер позиции на чертеже со строкой в таблице.</li>
@@ -100,6 +107,7 @@
       <span>Сумма (позиции с ценой):</span>
       <span><b id="cartSum">0</b> CNY <small>без НДС</small></span>
     </div>
+    <div id="cartAnalysis" class="cart-analysis"></div>
     <div class="cart-actions">
       <button id="exportCsv" class="btn btn-primary">Экспорт CSV</button>
       <button id="printOrder" class="btn">Печать</button>
@@ -107,6 +115,16 @@
     </div>
     <button id="exportAll2" class="btn" style="width:100%;margin-top:8px">⬇ Экспорт всех каталожных номеров (CSV)</button>
   </div>
+</aside>
+
+<!-- Documents drawer -->
+<div id="docsScrim" class="scrim"></div>
+<aside id="docs" class="cart docs">
+  <div class="cart-head">
+    <h2>Документы и руководства</h2>
+    <button id="docsClose" class="icon-btn" aria-label="Закрыть">&times;</button>
+  </div>
+  <div id="docsBody" class="docs-body"></div>
 </aside>
 
 <!-- Image lightbox -->
@@ -118,6 +136,7 @@
 
 <script src="data/parts.js"></script>
 <script src="data/prices.js"></script>
+<script src="data/manuals.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

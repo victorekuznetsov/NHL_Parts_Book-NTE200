@@ -46,6 +46,8 @@ and prices.
      tree of one-assembly PDFs with Russian tables) merged as its own chapters.
    - `scripts/extract_prices.py` — `.xlsx` price list → `window.PRICES` + a
      unique-numbers CSV carrying every attribute.
+   - `scripts/extract_manuals.py` — operator/repair/wiring PDFs → deep-linked
+     per-section repair pages + a Documents drawer (`window.MANUALS`).
    - **Read `references/extraction.md` first** — it lists the failure modes
      (value-based columns, `AR`/blank/alphanumeric quantities, no-part-number kit
      rows, image→section mapping) that a spot-check will miss.

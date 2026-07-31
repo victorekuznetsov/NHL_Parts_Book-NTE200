@@ -55,6 +55,30 @@ need a whole-section list. `window.PRICES` is `{ pn: {p:price,g:group,x:xref,n:r
 - Theme both fills and text: a bright brand color works as a button fill but is
   unreadable as link text — keep a separate darker "ink" variable.
 
+## Service manuals / repair guides (`extract_manuals.py`)
+
+When operator/repair/wiring manuals exist, wire them in — it turns a parts list
+into a service catalog:
+
+- A repair manual's **PDF bookmarks are often keyed by the same section codes**
+  as the catalog (e.g. "…_040-0040 燃油箱…"). Parse the outline
+  (`doc.get_toc()`), map `code -> page`, and deep-link each section with
+  `<a href="manuals/repair.pdf#page=N">` (browsers honour `#page=`). Keep a
+  chapter-overview fallback (the `XXX-0000` pages) for sections without their own
+  entry. Add a "Документы" drawer listing each PDF plus the repair TOC and any
+  wiring-diagram index.
+- Copy the PDFs into `catalog/manuals/` with clean ASCII names so the folder
+  stays self-contained and the `#page=` URLs don't need escaping. Deliver as
+  `window.MANUALS` (files, repairByCode, repairByChapter, repairToc, wiring).
+- Only link manuals to the machine they cover — e.g. the truck repair manual
+  applies to the truck chapters, not to a bought-in engine/drive sub-catalog.
+
+## Order analysis (spare-parts ordering)
+
+The cart is the natural place for order intelligence: a breakdown by system
+(chapter) with positions and sums, and a price-coverage count (priced vs not).
+It costs little and directly serves procurement.
+
 ## Always smoke-test in the real browser
 Chromium + Playwright are preinstalled (`executablePath:'/opt/pw-browsers/chromium'`).
 Load several sections and assert: first visible row is 001, zero rows overlap the

@@ -61,6 +61,12 @@ code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:.9em}
   min-width:19px;height:19px;padding:0 5px;border-radius:10px;
   display:inline-flex;align-items:center;justify-content:center;
 }
+.doc-btn{
+  display:flex;align-items:center;gap:7px;background:var(--panel2);
+  color:var(--txt);border:1px solid var(--line);font-weight:600;
+  padding:9px 14px;border-radius:22px;cursor:pointer;white-space:nowrap;
+}
+.doc-btn:hover{background:var(--hov2)}
 .icon-btn{
   background:transparent;border:none;color:var(--txt);font-size:22px;
   cursor:pointer;line-height:1;padding:6px;border-radius:8px;
@@ -245,6 +251,38 @@ mark{background:var(--acc);color:#0c2c20;border-radius:3px;padding:0 2px}
 .btn-primary{background:var(--acc);color:#0c2c20;border-color:var(--acc);font-weight:600}
 .btn-primary:hover{filter:brightness(1.06);background:var(--acc)}
 .btn-ghost{flex:0 0 auto;color:var(--danger)}
+
+/* ---- per-section manual links ---- */
+.man-links{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 4px}
+.man-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;
+  text-decoration:none;color:var(--acc-ink);background:var(--panel2);
+  border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+.man-link:hover{background:#e8f7f0;border-color:var(--acc)}
+
+/* ---- documents drawer ---- */
+.docs .docs-body{flex:1;overflow-y:auto;padding:14px 16px}
+.doc-cards{display:grid;gap:10px;margin-bottom:14px}
+.doc-card{display:block;text-decoration:none;color:var(--txt);
+  border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;background:var(--panel)}
+.doc-card:hover{border-color:var(--acc);background:#f6fffb}
+.dc-title{font-weight:700;color:var(--acc-ink)}
+.dc-desc{font-size:12.5px;color:var(--mut);margin:2px 0 4px}
+.dc-meta{font-size:11.5px;color:var(--mut)}
+.doc-sec{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+.doc-sec>summary{cursor:pointer;font-weight:600;font-size:13.5px;padding:6px 2px;color:var(--txt)}
+.toc-list{display:flex;flex-direction:column}
+.toc-row{display:flex;align-items:baseline;gap:8px;text-decoration:none;color:var(--txt);
+  padding:7px 6px;border-bottom:1px solid var(--line);font-size:13px}
+.toc-row:hover{background:var(--hov)}
+.tc-code{color:var(--acc-ink);font-variant-numeric:tabular-nums;font-weight:600;min-width:70px}
+.tc-name{flex:1;min-width:0}
+.tc-page{color:var(--mut);font-size:11.5px;white-space:nowrap}
+
+/* ---- cart order analysis ---- */
+.cart-analysis{margin-top:8px}
+.an-box>summary{cursor:pointer;font-size:12.5px;color:var(--mut);padding:4px 0}
+.an-row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 4px;color:var(--txt)}
+.an-row span:last-child{color:var(--mut);white-space:nowrap}
 
 /* ---- scrims ---- */
 .scrim{position:fixed;inset:0;background:#000000a6;z-index:50;display:none}
