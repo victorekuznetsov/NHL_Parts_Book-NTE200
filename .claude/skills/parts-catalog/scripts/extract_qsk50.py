@@ -118,7 +118,8 @@ def decode(name):
 
 def reconstruct_tree():
     """Rebuild the PDF tree from the split zip in the repo root; return its dir."""
-    z = sorted(glob.glob(os.path.join(ROOT, "QSK50*.zip")))
+    z = sorted(glob.glob(os.path.join(ROOT, "sources", "qsk50-engine", "QSK50*.zip"))
+               or glob.glob(os.path.join(ROOT, "QSK50*.zip")))
     if not z:
         raise SystemExit("QSK50 source zip not found; pass the extracted dir or zip")
     workdir = tempfile.mkdtemp(prefix="qsk50_")

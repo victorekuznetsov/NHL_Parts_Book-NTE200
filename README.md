@@ -1,17 +1,49 @@
 # NHL_Parts_Book-NTE200
 
-Книга запчастей карьерного самосвала **NTE200** (Inner Mongolia North Hauler,
-NHL) и её интерактивная веб-версия.
+Единый интерактивный каталог запчастей карьерного самосвала **NTE200** (NHL):
+самосвал, привод **GE**, двигатель **Cummins QSK50**, цены и руководства по
+ремонту/эксплуатации.
 
-- **Исходники** — книга запчастей NTE200 (`NTE200 PART номера Polyus.zip.001 … .004`,
-  многотомный архив) и книга привода GE (`NTE200 GE备件手册20230805.doc`).
-- **Интерактивный каталог** — [`catalog/`](catalog/): кликабельные чертежи,
-  таблицы деталей, поиск, корзина для заказа и экспорт всех уникальных
-  каталожных номеров. Откройте [`catalog/index.html`](catalog/index.html) в браузере.
-- **Извлечение данных** — [`tools/extract_catalog.py`](tools/extract_catalog.py)
-  разбирает PDF, а [`tools/extract_ge.py`](tools/extract_ge.py) — Word-документ
-  привода GE (глава 600).
-- **Все каталожные номера** — [`catalog/data/all_part_numbers.csv`](catalog/data/all_part_numbers.csv):
-  2470 уникальных номеров (NTE200 + GE).
+## Структура репозитория
 
-Подробности — в [`catalog/README.md`](catalog/README.md).
+```
+catalog/     ← ГОТОВЫЙ каталог (это и нужно скачивать). Самодостаточный:
+             открывается двойным щелчком по catalog/index.html, без сервера.
+  index.html app.js styles.css
+  data/      parts.js · prices.js · manuals.js · all_part_numbers.csv
+  drawings/  чертежи (355 файлов)
+  manuals/   PDF-руководства (ремонт, оператор, электросхема 24В)
+
+sources/     ← исходники (нужны только для пересборки, скачивать не обязательно)
+  nte200-parts/  книга NTE200 (многотомный zip)
+  ge-drive/      книга привода GE (Word .doc)
+  qsk50-engine/  каталог двигателя Cummins QSK50 (zip)
+  manuals/       PDF-руководства (оригиналы)
+  price/         прайс-лист (xlsx)
+  brand/         фирменный шаблон «Развитие» (pptx)
+
+tools/       ← скрипты пересборки каталога из исходников
+docs/        ← инструкции: как пользоваться, промт для новых каталогов, отчёт проверки
+.claude/skills/parts-catalog/  ← навык для создания таких каталогов
+```
+
+## Что скачивать
+
+Для работы достаточно **одной папки `catalog/`** — в ней уже лежат все данные,
+чертежи и руководства. Откройте `catalog/index.html`.
+
+## Пересборка из исходников
+
+```bash
+pip install pymupdf olefile openpyxl
+python3 tools/extract_catalog.py    # книга NTE200 (PDF)
+python3 tools/extract_ge.py         # привод GE (Word .doc)  → глава 600
+python3 tools/extract_qsk50.py      # двигатель QSK50 (Cummins) → главы Q01–Q12
+python3 tools/extract_prices.py     # цены и аналитики (XLSX)
+python3 tools/extract_manuals.py    # руководства + ссылки на ремонт
+python3 tools/verify_completeness.py catalog/data/parts.js   # проверка полноты
+```
+
+Документация: [`docs/КАК_ПОЛЬЗОВАТЬСЯ.md`](docs/), [`docs/ОТЧЁТ_ПРОВЕРКИ.md`](docs/),
+[`catalog/README.md`](catalog/README.md). Контакты: Кузнецов В.Е.,
+KuznetsovVE@industrservice.ru.

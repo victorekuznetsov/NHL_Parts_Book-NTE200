@@ -87,7 +87,8 @@ def load_prices(path):
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else None
     if not src:
-        cand = glob.glob(os.path.join(ROOT, "*райс*.xlsx")) + glob.glob(os.path.join(ROOT, "*.xlsx"))
+        cand = (glob.glob(os.path.join(ROOT, "sources", "price", "*.xlsx"))
+                or glob.glob(os.path.join(ROOT, "*райс*.xlsx")) + glob.glob(os.path.join(ROOT, "*.xlsx")))
         if not cand:
             raise SystemExit("price-list .xlsx not found; pass its path")
         src = cand[0]
