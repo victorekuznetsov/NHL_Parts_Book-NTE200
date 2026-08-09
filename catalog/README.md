@@ -54,9 +54,11 @@ python3 -m http.server 8000   # затем http://localhost:8000
 
 ## Содержимое
 
-Каталог включает книгу запчастей NTE200 и **привод GE** (глава 600 —
+Каталог включает книгу запчастей NTE200, **привод GE** (глава 600 —
 驱动系统 / DRIVING SYSTEM):轮马达/WHEEL MOTOR, 主发电机/MAIN ALTERNATOR,
-电阻柜/RETARDER, 电控柜/CONTROL GROUP, 接触器/CONTACTOR.
+电阻柜/RETARDER, 电控柜/CONTROL GROUP, 接触器/CONTACTOR, и двигатель
+**Cummins QSK50** в двух видах: из книги (PDF, главы Q01–Q12) и из онлайн‑каталога
+Cummins (главы QO01–QO14 — с массой, габаритами, характеристиками и фото деталей).
 
 ## Структура
 
@@ -98,4 +100,19 @@ python3 tools/extract_catalog.py path/to/catalog.pdf
 ```bash
 pip install olefile
 python3 tools/extract_ge.py "NTE200 GE备件手册20230805.doc"
+```
+
+### Двигатель QSK50 — онлайн-каталог Cummins (главы QO01–QO14)
+
+Помимо разобранной из PDF книги QSK50 (главы Q01–Q12), в каталог добавлен тот же
+двигатель из **онлайн-каталога Cummins** (серийный № 33239899). Скрипт
+[`tools/extract_qsk50_online.py`](../tools/extract_qsk50_online.py) читает исходную
+выгрузку `sources/qsk50-online/33239899.js`, строит 14 глав (по системам Cummins),
+переносит к каждой детали её **массу, габариты, характеристики и имя файла фото**
+(`part.d = {img, wt, dim, at}`), копирует 60 листов-чертежей в `drawings/QO-*.png`
+и добирает недостающие чертежи из PDF-книги (29 узлов). Цены не трогает — они
+подбираются по номеру из `prices.js` при отрисовке. Скрипт идемпотентен.
+
+```bash
+python3 tools/extract_qsk50_online.py
 ```

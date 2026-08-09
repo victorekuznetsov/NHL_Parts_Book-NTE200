@@ -322,3 +322,28 @@ mark{background:var(--acc);color:#0c2c20;border-radius:3px;padding:0 2px}
   #printArea,#printArea *{visibility:visible}
   #printArea{position:absolute;left:0;top:0;width:100%;color:#000}
 }
+
+/* ---- online-catalog part details (weight, size, photo, spec sheet) ---- */
+.pd-toggle{display:inline-block;margin-top:4px;font:inherit;font-size:11px;line-height:1;
+  color:var(--acc-ink);background:var(--panel2);border:1px solid var(--line);
+  border-radius:10px;padding:2px 8px;cursor:pointer}
+.pd-toggle:hover{border-color:var(--acc2)}
+.pd-toggle.open{background:var(--acc);color:#083b2a;border-color:var(--acc)}
+.parts-tbl tr.pd-row td{background:var(--panel2);padding:0}
+.parts-tbl tr.pd-row:hover td{background:var(--panel2)}
+.pd{display:flex;gap:16px;padding:12px 14px;align-items:flex-start}
+.pd.no-photo{padding-left:14px}
+.pd-photo{width:150px;height:150px;object-fit:contain;background:#fff;
+  border:1px solid var(--line);border-radius:var(--radius);flex:0 0 auto}
+.pd-body{flex:1 1 auto;min-width:0}
+.pd-attrs{border-collapse:collapse;font-size:12.5px;width:100%;max-width:560px}
+.pd-attrs th{text-align:left;color:var(--mut);font-weight:600;padding:3px 12px 3px 0;
+  white-space:nowrap;vertical-align:top;width:44%}
+.pd-attrs td{padding:3px 0;border-top:1px solid var(--line);vertical-align:top}
+.pd-attrs tr:first-child th,.pd-attrs tr:first-child td{border-top:none}
+.pd-used{margin-top:8px;font-size:12px;color:var(--mut);line-height:1.7}
+.pd-used b{color:var(--txt);font-weight:600}
+.pd-used a{color:var(--acc-ink);text-decoration:none;font-variant-numeric:tabular-nums;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:1px 6px;margin-right:2px}
+.pd-used a:hover{border-color:var(--acc2)}
+@media (max-width:560px){.pd{flex-direction:column}.pd-photo{width:120px;height:120px}}

@@ -22,6 +22,27 @@
     return null;
   }
   function priceOf(pn) { return PRICES[pn] || null; }
+  // Part photos for the online QSK50 catalog are served from the public Cummins
+  // CDN (like the standalone Cummins app), so we don't ship ~thousands of images.
+  // 3639541_iso.png -> /graphics/parts/363/3639541/3639541_iso.png; onerror hides it.
+  function photoSrc(file) {
+    var num = String(file || "").split("_")[0];
+    if (!num) return "";
+    return "https://parts.cummins.com/graphics/parts/" + num.slice(0, 3) + "/" + num + "/" + file;
+  }
+  // other sections in the book that also list this part number (live cross-ref)
+  function usedIn(pn, exceptCode) {
+    var res = [], seen = {};
+    if (!pn) return res;
+    DATA.sections.forEach(function (s) {
+      if (s.code === exceptCode || seen[s.code]) return;
+      var has = (s.figures || []).some(function (f) {
+        return f.parts.some(function (p) { return p.pn === pn; });
+      });
+      if (has) { seen[s.code] = 1; res.push(s); }
+    });
+    return res;
+  }
   function fmtPrice(v) {
     if (v == null || v === "") return "";
     return Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -81,9 +102,10 @@
   /* ---------------- sidebar ---------------- */
   // group chapters into the truck and the engine catalogs
   function chapGroup(code) {
-    return /^Q/.test(String(code))
-      ? { id: "qsk50", label: "Двигатель QSK50 · Cummins" }
-      : { id: "nte200", label: "Самосвал NTE200 · NHL" };
+    code = String(code);
+    if (/^QO/.test(code)) return { id: "qsk50o", label: "Двигатель QSK50 · Cummins online (вес · размеры · фото)" };
+    if (/^Q/.test(code)) return { id: "qsk50", label: "Двигатель QSK50 · книга (PDF)" };
+    return { id: "nte200", label: "Самосвал NTE200 · NHL" };
   }
   function buildSidebar() {
     var nav = $("#chapters");
@@ -149,28 +171,53 @@
     return pr && pr.p != null ? fmtPrice(pr.p) : '<span class="dash">—</span>';
   }
 
-  function partsTable(parts) {
+  // extra card data (weight, size, photo, spec sheet) that came with the online catalog
+  function detailChip(p) {
+    return p.d ? '<button class="pd-toggle" data-pd="' + esc(p.pn) + '" title="Вес, габариты, фото и характеристики">&#9432; детали</button>' : "";
+  }
+  var RU_ATTR = { "Sellable": "Продаётся отдельно", "Hazardous Material": "Опасный груз" };
+  function partDetailRow(p, secCode, cols) {
+    var d = p.d; if (!d) return "";
+    var photo = d.img ? '<img class="pd-photo" loading="lazy" src="' + esc(photoSrc(d.img)) +
+      '" alt="Фото детали ' + esc(p.pn) + '" onerror="this.closest(\'.pd\').classList.add(\'no-photo\');this.remove()">' : "";
+    var rows = [];
+    if (p.qty) rows.push(["Кол-во на схеме", p.qty]);
+    if (d.wt) rows.push(["Масса, кг", d.wt]);
+    if (d.dim) rows.push(["Габариты Д×Ш×В, мм", d.dim]);
+    if (d.at) Object.keys(d.at).forEach(function (k) { rows.push([RU_ATTR[k] || k, d.at[k]]); });
+    var attrs = '<table class="pd-attrs">' + rows.map(function (r) {
+      return "<tr><th>" + esc(r[0]) + "</th><td>" + esc(r[1]) + "</td></tr>"; }).join("") + "</table>";
+    var used = usedIn(p.pn, secCode).slice(0, 12);
+    var usedHtml = used.length ? '<div class="pd-used"><b>Ещё в разделах:</b> ' + used.map(function (s) {
+      return '<a href="#' + s.code + '" class="jump" data-code="' + s.code + '" title="' + esc(s.zh || s.en) + '">' + esc(s.code) + "</a>"; }).join(" ") + "</div>" : "";
+    return '<tr class="pd-row" hidden><td colspan="' + cols + '">' +
+      '<div class="pd' + (d.img ? "" : " no-photo") + '">' + photo +
+      '<div class="pd-body">' + attrs + usedHtml + "</div></div></td></tr>";
+  }
+
+  function partsTable(parts, secCode) {
     var rows = parts.map(function (p) {
       var qn = parseInt(p.qty, 10); if (!(qn > 0)) qn = 1;
+      var det = partDetailRow(p, secCode, 7);
       if (p.pn) {
-        return '<tr class="lvl' + (p.lvl || 0) + '">' +
+        return '<tr class="lvl' + (p.lvl || 0) + (p.d ? " has-det" : "") + '">' +
           '<td class="c-ref">' + esc(padRef(p.ref)) + "</td>" +
           '<td class="c-pn">' + pnCell(p) + "</td>" +
-          '<td class="c-name">' + nameCell(p) + "</td>" +
+          '<td class="c-name">' + nameCell(p) + detailChip(p) + "</td>" +
           '<td class="c-price" title="Цена, CNY без НДС">' + priceCell(p.pn) + "</td>" +
           '<td class="c-qty" title="Количество на схеме">' + esc(p.qty) + "</td>" +
           '<td class="c-need"><input class="need" type="number" min="1" value="' + qn + '" data-pn="' + esc(p.pn) + '" title="Требуемое количество" aria-label="Требуемое количество"></td>' +
           '<td class="c-add"><button class="addbtn" data-pn="' + esc(p.pn) + '" title="Добавить в заказ">&#65291;</button></td>' +
-          "</tr>";
+          "</tr>" + det;
       }
       // listed position without an orderable catalog number
-      return '<tr class="lvl' + (p.lvl || 0) + ' norow">' +
+      return '<tr class="lvl' + (p.lvl || 0) + ' norow' + (p.d ? " has-det" : "") + '">' +
         '<td class="c-ref">' + esc(padRef(p.ref)) + "</td>" +
         '<td class="c-pn dash">—</td>' +
-        '<td class="c-name">' + nameCell(p) + "</td>" +
+        '<td class="c-name">' + nameCell(p) + detailChip(p) + "</td>" +
         '<td class="c-price dash">—</td>' +
         '<td class="c-qty">' + esc(p.qty) + "</td>" +
-        '<td class="c-need"></td><td class="c-add"></td></tr>';
+        '<td class="c-need"></td><td class="c-add"></td></tr>' + det;
     }).join("");
     return '<table class="parts-tbl"><thead><tr>' +
       "<th>№</th><th>Номер детали</th><th>Наименование</th>" +
@@ -213,7 +260,7 @@
       var draw = f.images.length
         ? '<div class="fig-draw">' + drawingsMarkup(f.images) + "</div>"
         : "";
-      var tbl = f.parts.length ? partsTable(f.parts)
+      var tbl = f.parts.length ? partsTable(f.parts, s.code)
         : '<div class="no-parts">Для этого рисунка в книге приведён только чертёж.</div>';
       return '<section class="figure' + (f.images.length ? "" : " nofig") + '">' + head +
         draw + '<div class="fig-parts">' + tbl + "</div></section>";
@@ -271,6 +318,17 @@
   }
 
   function onPartClick(e) {
+    var jl = e.target.closest(".jump");
+    if (jl) { e.preventDefault(); showSection(jl.getAttribute("data-code")); return; }
+    var tog = e.target.closest(".pd-toggle");
+    if (tog) {
+      var det = tog.closest("tr").nextElementSibling;
+      if (det && det.classList.contains("pd-row")) {
+        det.hidden = !det.hidden;
+        tog.classList.toggle("open", !det.hidden);
+      }
+      return;
+    }
     var b = e.target.closest(".addbtn, .c-pn button");
     if (!b) return;
     var pn = b.getAttribute("data-pn");
