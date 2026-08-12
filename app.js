@@ -565,6 +565,176 @@
     if (cartLines() && confirm("Очистить весь заказ?")) { cart = {}; persist(); renderCart(); }
   });
 
+  /* ---------------- check by list ---------------- */
+  // one merged record per catalog part number, plus normalized/cross-ref lookups
+  var PN_INDEX, PN_NORM, PN_XREF;
+  function normPn(s) {
+    return String(s == null ? "" : s).toUpperCase().replace(/[\s ]+/g, "");
+  }
+  function buildPnIndex() {
+    if (PN_INDEX) return;
+    PN_INDEX = {}; PN_NORM = {}; PN_XREF = {};
+    DATA.sections.forEach(function (s) {
+      var src = catalogOf(s.chapter);
+      secParts(s).forEach(function (p) {
+        if (!p.pn) return;
+        var u = PN_INDEX[p.pn] || (PN_INDEX[p.pn] =
+          { pn: p.pn, en: "", zh: "", wt: "", dim: "", secs: {}, src: {} });
+        u.secs[s.code] = 1; u.src[src] = 1;
+        if (!u.en && p.en) u.en = p.en;
+        if (!u.zh && p.zh) u.zh = p.zh;
+        if (p.d) {
+          if (!u.wt && p.d.wt && p.d.wt !== "0" && p.d.wt !== "0.0") u.wt = p.d.wt;
+          if (!u.dim && p.d.dim) u.dim = p.d.dim;
+        }
+      });
+    });
+    Object.keys(PN_INDEX).forEach(function (pn) { PN_NORM[normPn(pn)] = pn; });
+    // interchangeable article -> catalog part number (only if the article itself
+    // isn't already a catalog number, and the target part is in the catalog)
+    Object.keys(PRICES).forEach(function (pn) {
+      var x = PRICES[pn] && PRICES[pn].x;
+      if (!x || !PN_INDEX[pn]) return;
+      var nx = normPn(x);
+      if (!PN_NORM[nx] && !PN_XREF[nx]) PN_XREF[nx] = pn;
+    });
+  }
+  function resolvePn(token) {
+    var nt = normPn(token);
+    if (!nt) return null;
+    if (PN_NORM[nt]) return { pn: PN_NORM[nt], via: "ok" };
+    if (PN_XREF[nt]) return { pn: PN_XREF[nt], via: "xref" };
+    return null;
+  }
+  // split pasted text / file into ordered, de-duplicated part-number tokens.
+  // Each line may be one cell or a copied Excel row; the number is the first
+  // word of each comma/semicolon/tab-separated cell.
+  function parseTokens(text) {
+    var seen = {}, out = [];
+    String(text || "").split(/[\r\n]+/).forEach(function (line) {
+      line.split(/[,;\t]+/).forEach(function (cell) {
+        var tok = cell.trim().split(/\s+/)[0];
+        if (!tok) return;
+        var key = normPn(tok);
+        if (!key || seen[key]) return;
+        seen[key] = 1; out.push(tok.trim());
+      });
+    });
+    return out;
+  }
+  var lastCheck = [];
+  function runCheck() {
+    buildPnIndex();
+    var tokens = parseTokens($("#checkText").value);
+    var results = tokens.map(function (tok) {
+      var hit = resolvePn(tok);
+      if (!hit) return { input: tok, status: "miss" };
+      var u = PN_INDEX[hit.pn], pr = priceOf(hit.pn) || {};
+      return { input: tok, status: hit.via, pn: hit.pn,
+        src: Object.keys(u.src).sort().join("/"),
+        ru: pr.n || "", en: u.en, zh: u.zh,
+        price: pr.p != null ? pr.p : null, grp: pr.g || "", xref: pr.x || "",
+        wt: u.wt || "", dim: u.dim || "", secs: Object.keys(u.secs).sort() };
+    });
+    lastCheck = results;
+    renderCheck(results);
+  }
+  function renderCheck(results) {
+    var sum = $("#checkSummary"), box = $("#checkResults"), foot = $("#checkFoot");
+    if (!results.length) {
+      sum.hidden = true; foot.hidden = true;
+      box.innerHTML = '<div class="check-empty">Введите номера деталей и нажмите «Проверить».</div>';
+      return;
+    }
+    var found = results.filter(function (r) { return r.status !== "miss"; }).length;
+    var miss = results.length - found;
+    sum.hidden = false;
+    sum.innerHTML = '<span class="chip">Всего: <b>' + results.length + "</b></span>" +
+      '<span class="chip ok">Найдено: <b>' + found + "</b></span>" +
+      '<span class="chip miss">Не найдено: <b>' + miss + "</b></span>";
+    var rows = results.map(function (r, i) {
+      if (r.status === "miss") {
+        return '<tr class="miss"><td>' + (i + 1) + '</td><td class="k-pn">' + esc(r.input) + "</td>" +
+          '<td><span class="badge no">нет в каталоге</span></td>' +
+          '<td colspan="11" class="check-empty">Позиция не найдена в каталоге</td></tr>';
+      }
+      var badge = r.status === "xref"
+        ? '<span class="badge xref" title="Найдено по взаимозаменяемому артикулу">взаимозам. → ' + esc(r.pn) + "</span>"
+        : '<span class="badge ok">в каталоге</span>';
+      var secs = r.secs.slice(0, 8).map(function (c) {
+        return '<a href="#' + esc(c) + '" class="jump" data-code="' + esc(c) + '">' + esc(c) + "</a>";
+      }).join(" ") + (r.secs.length > 8 ? " +" + (r.secs.length - 8) : "");
+      return "<tr><td>" + (i + 1) + '</td><td class="k-pn">' + esc(r.input) + "</td>" +
+        "<td>" + badge + '</td><td class="k-pn">' + esc(r.pn) + "</td>" +
+        '<td class="k-src">' + esc(r.src) + "</td>" +
+        "<td>" + esc(r.ru) + "</td><td>" + esc(r.en) + "</td><td>" + esc(r.zh) + "</td>" +
+        '<td class="k-price">' + (r.price != null ? fmtPrice(r.price) : "—") + "</td>" +
+        "<td>" + esc(r.grp) + "</td><td>" + esc(r.xref) + "</td>" +
+        '<td class="k-wt">' + esc(r.wt) + "</td><td>" + esc(r.dim) + "</td>" +
+        '<td class="k-secs">' + secs + "</td></tr>";
+    }).join("");
+    box.innerHTML = '<table class="check-tbl"><thead><tr>' +
+      "<th>№</th><th>Запрос</th><th>Статус</th><th>Артикул в каталоге</th><th>Каталог</th>" +
+      "<th>Наименование (RU)</th><th>EN</th><th>ZH</th><th>Цена, CNY</th><th>Группа</th>" +
+      "<th>Взаимозам.</th><th>Масса, кг</th><th>Габариты, мм</th><th>Разделы</th>" +
+      "</tr></thead><tbody>" + rows + "</tbody></table>";
+    foot.hidden = false;
+    box.onclick = function (e) {
+      var j = e.target.closest(".jump");
+      if (j) { e.preventDefault(); showSection(j.getAttribute("data-code")); closeCheck(); }
+    };
+  }
+  function exportCheck() {
+    if (!lastCheck.length) { toast("Список пуст"); return; }
+    var out = ["Запрос,Статус,Артикул в каталоге,Каталог,Наименование (RU)," +
+      "Description (EN),Description (ZH),Цена CNY без НДС,Группа," +
+      "Взаимозаменяемый артикул,Масса кг,Габариты мм,Разделы"];
+    var st = { ok: "в каталоге", xref: "взаимозаменяемый", miss: "нет в каталоге" };
+    lastCheck.forEach(function (r) {
+      out.push([csv(r.input), st[r.status] || r.status, csv(r.pn || ""), csv(r.src || ""),
+        csv(r.ru || ""), csv(r.en || ""), csv(r.zh || ""),
+        (r.price == null ? "" : r.price), csv(r.grp || ""), csv(r.xref || ""),
+        csv(r.wt || ""), csv(r.dim || ""),
+        csv((r.secs || []).join(" "))].join(","));
+    });
+    download("NTE200_check_" + new Date().toISOString().slice(0, 10) + ".csv", "﻿" + out.join("\r\n"), "text/csv");
+    toast("Экспортировано строк: " + lastCheck.length);
+  }
+  function addFoundToCart() {
+    var n = 0;
+    lastCheck.forEach(function (r) {
+      if (r.status === "miss") return;
+      var hit = findPart(r.pn);
+      if (hit) { addToCart(hit.p, hit.s, 1); n++; }
+    });
+    if (n) { toast("Добавлено в заказ: " + n); openCart(); } else toast("Нет найденных позиций");
+  }
+  var checkEl = $("#check"), checkScrim = $("#checkScrim");
+  function openCheck() { checkEl.classList.add("open"); checkScrim.classList.add("show"); if (!lastCheck.length) renderCheck([]); }
+  function closeCheck() { checkEl.classList.remove("open"); checkScrim.classList.remove("show"); }
+  $("#checkBtn").addEventListener("click", openCheck);
+  var checkBtn2 = $("#checkBtn2"); if (checkBtn2) checkBtn2.addEventListener("click", openCheck);
+  $("#checkClose").addEventListener("click", closeCheck);
+  checkScrim.addEventListener("click", closeCheck);
+  $("#checkRun").addEventListener("click", runCheck);
+  $("#checkExport").addEventListener("click", exportCheck);
+  $("#checkAddFound").addEventListener("click", addFoundToCart);
+  $("#checkClear").addEventListener("click", function () {
+    $("#checkText").value = ""; lastCheck = []; renderCheck([]);
+  });
+  $("#checkFile").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      var t = String(rd.result || "");
+      var cur = $("#checkText").value;
+      $("#checkText").value = cur ? cur.replace(/\s*$/, "") + "\n" + t : t;
+      runCheck();
+    };
+    rd.readAsText(f);
+    e.target.value = "";
+  });
+
   /* ---------------- lightbox ---------------- */
   var lb = $("#lightbox"), lbImg = $("#lbImg"), lbStage = $("#lbStage");
   var scale = 1, tx = 0, ty = 0, drag = false, sx = 0, sy = 0;
@@ -600,7 +770,7 @@
     if (!Object.keys(pts).length) drag = false;
   });
   function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeLb(); closeCart(); closeDocs(); } });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeLb(); closeCart(); closeDocs(); closeCheck(); } });
 
   /* ---------------- drawers ---------------- */
   var cartEl = $("#cart"), cartScrim = $("#cartScrim");
